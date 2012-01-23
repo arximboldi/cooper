@@ -3,7 +3,7 @@
 #  File:       test_main.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 16:29:21 2012
-#  Time-stamp: <2015-07-21 17:36:43 jbo>
+#  Time-stamp: <2015-07-21 17:39:14 jbo>
 #
 
 #
@@ -28,6 +28,8 @@
 """
 Unit test runner.
 """
+
+from test.jpb_coop import *
 
 import unittest
 
