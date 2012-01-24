@@ -3,7 +3,7 @@
 #  File:       jpb_coop.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 16:12:23 2012
-#  Time-stamp: <2012-01-23 19:47:13 jbo>
+#  Time-stamp: <2012-01-24 12:58:43 jbo>
 #
 
 #
@@ -30,6 +30,7 @@ Tests for jpb.coop
 """
 
 from jpb import coop
+from itertools import repeat
 
 import unittest
 
@@ -77,7 +78,7 @@ class TestCoop(unittest.TestCase):
             decorator = self.cls_decorator.im_func,
             metacls   = self.cls_meta)
 
-    def test_constructor_parameter_passing(self):
+    def test_init_parameter_passing(self):
         obj = self._D()
         self.assertEqual(obj._b_param, 'b_param')
         self.assertEqual(obj._d_param, 'd_param')
@@ -92,7 +93,7 @@ class TestCoop(unittest.TestCase):
         self.assertEqual(obj._b_param, 'new_b_param')
         self.assertEqual(obj._d_param, 'new_d_param')
 
-    def test_constructor_check_no_positional(self):
+    def test_init_check_no_positional(self):
         def make_cls():
             @self.cls_decorator.im_func
             class _Bad(object):
@@ -101,7 +102,7 @@ class TestCoop(unittest.TestCase):
                     pass
         self.assertRaises (coop.CooperativeError, make_cls)
 
-    def test_constructor_check_no_variadic(self):
+    def test_init_check_no_variadic(self):
         def make_cls():
             @self.cls_decorator.im_func
             class _Bad(object):
@@ -110,7 +111,7 @@ class TestCoop(unittest.TestCase):
                     pass
         self.assertRaises (coop.CooperativeError, make_cls)
 
-    def test_constructor_check_no_variadic_keywords(self):
+    def test_init_check_no_variadic_keywords(self):
         def make_cls():
             @self.cls_decorator.im_func
             class _Bad(object):
@@ -119,28 +120,78 @@ class TestCoop(unittest.TestCase):
                     pass
         self.assertRaises (coop.CooperativeError, make_cls)
 
+    def test_super_params_sends_params(self):
+        @self.cls_decorator.im_func
+        class _Fixed(self._F):
+            __metaclass__ = self.cls_meta
+            @coop.super_params(b_param='fixed_b_param')
+            def __init__(self):
+                pass
+        obj = _Fixed()
+        self.assertEqual(obj._b_param, 'fixed_b_param')
+
+    def test_manual_init(self):
+        outer_self = self
+        @self.cls_decorator.im_func
+        class _Manual(self._D):
+            __metaclass__ = self.cls_meta
+            @coop.manual_init
+            def __init__(self, *a, **k):
+                super(_Manual, self).__init__(*a, **k)
+                outer_self._trace.append(_Manual.__init__)
+        self._clear_trace()
+        _Manual()
+        self._check_trace_calls_with_mro(_Manual.__init__)
+
+    def test_can_not_mix_non_cooperative_superclass(self):
+        class NonCooperativeSuperClass(object):
+            pass
+        def make_class():
+            @self.cls_decorator.im_func
+            class _Bad(NonCooperativeSuperClass):
+                __metaclass__ = self.cls_meta
+        self.assertRaises(coop.CooperativeError, make_class)
+
+    def test_can_mix_non_cooperative_subclass(self):
+        class _Good(self._D):
+            pass
+        self._clear_trace()
+        _Good()
+        self._check_trace_calls_with_mro(self._D.__init__)
+
     def test_mro_call_order(self):
         for cls in (self._D, self._C, self._B, self._A):
-            self._trace[:] = []
+            self._clear_trace()
             cls()
             self._check_trace_calls_with_mro(cls.__init__)
 
-    def test_mro_does_not_decorate_undefined_constructor(self):
-        self._trace[:] = []
+    def test_mro_does_not_decorate_undefined_init(self):
+        self._clear_trace()
         self._F()
         self._check_trace_calls_with_mro(self._D.__init__)
+
+    def _clear_trace(self):
+        self._trace[:] = []
 
     def _check_trace_calls_with_mro(self, method):
         global _global_call_trace
         cls  = method.im_class
         name = method.__name__
         mro  = cls.__mro__[:-1] # discard object
-        self.assertEqual(list(mro[::-1]), [m.im_class for m in self._trace])
-        for m in self._trace:
-            m.__name__ == name
+        self.assertEqual(zip(mro[::-1], repeat(name)),
+                         [(m.im_class, m.__name__) for m in self._trace])
 
 
-class TestCoopMeta(unittest.TestCase):
+class TestCoopMeta(TestCoop):
 
-    cls_decorator = None
+    cls_decorator = lambda x:x
     cls_meta      = coop.CooperativeMeta
+
+    def test_meta_works_on_subclasses(self):
+        outer_self = self
+        class _NewClass(self._D):
+            def __init__(self):
+                outer_self._trace.append(_NewClass.__init__)
+        self._clear_trace()
+        _NewClass()
+        self._check_trace_calls_with_mro(_NewClass.__init__)

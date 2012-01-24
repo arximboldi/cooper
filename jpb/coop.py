@@ -3,7 +3,7 @@
 #  File:       collab.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 15:49:30 2012
-#  Time-stamp: <2012-01-23 19:42:08 jbo>
+#  Time-stamp: <2012-01-24 12:27:51 jbo>
 #
 
 #
@@ -34,15 +34,17 @@ import inspect
 from functools import wraps
 
 class CooperativeError(Exception): pass
-class ConstructorError(CooperativeError):  pass
+class InitError(CooperativeError):  pass
 
-def check_is_constructor(method):
+
+def check_is_init(method):
     if method.__name__ != '__init__':
-        raise ConstructorError
+        raise InitError
+
 
 def check_all_params_are_keyword(method):
     """
-    Raises ConstructorError if method any parameter that is not a
+    Raises InitError if method any parameter that is not a
     named keyword parameter
     """
 
@@ -50,12 +52,13 @@ def check_all_params_are_keyword(method):
 
     # Always have self, thus the -1
     if len(args or []) - 1 != len(defaults or []):
-        raise ConstructorError, "Constructor has positional parameters " + \
+        raise InitError, "Init has positional parameters " + \
               str(args[1:])
     if varargs:
-        raise ConstructorError, "Constructor has variadic positional parameters"
+        raise InitError, "Init has variadic positional parameters"
     if keywords:
-        raise ConstructorError, "Constructor has variadic keyword parameters"
+        raise InitError, "Init has variadic keyword parameters"
+
 
 def extract_keywords(method, keys):
     """
@@ -72,17 +75,49 @@ def extract_keywords(method, keys):
             del keys[a]
     return new
 
-def constructor(cls):
+
+def decorate_init(cls, fixed_keywords={}):
     def decorator(method):
-        check_is_constructor(method)
+        check_is_init(method)
         check_all_params_are_keyword(method)
         @wraps(method)
         def wrapper(self, **orig):
             ours = extract_keywords(method, orig)
+            orig.update(fixed_keywords)
             super(cls, self).__init__(**orig)
             method(self, **ours)
         return wrapper
     return decorator
+
+
+class InitDecorator(object):
+    """
+    An init decorator will take a init function in its constructor and
+    should return the decorated version when called with the class as
+    a parameter.
+    """
+    def __call__(self, cls):
+        pass
+
+
+class manual_init(InitDecorator):
+    def __init__(self, function=None, *a, **k):
+        super(manual_init, self).__init__(*a, **k)
+        self.wrapped_init = function
+    def __call__(self, cls):
+        return self.wrapped_init
+
+
+def super_params(**keywords):
+    class FixedInit(InitDecorator):
+        def __init__(self, function=None, *a, **k):
+            super(FixedInit, self).__init__(*a, **k)
+            self.wrapped_init = function
+        def __call__(self, cls):
+            decorator = decorate_init(cls, fixed_keywords=keywords)
+            return decorator(self.wrapped_init)
+    return FixedInit
+
 
 def defines_method(cls, method_name):
     deriv_method = getattr(getattr(cls, method_name, None), 'im_func', None)
@@ -91,10 +126,24 @@ def defines_method(cls, method_name):
 
 
 def cooperative(cls):
+    if hasattr(cls, '_cooperative_classes_set'):
+        coops = cls._cooperative_classes_set
+        if cls in coops:
+            # Already decorated, maybe mixing Meta and decorator
+            return cls
+    else:
+        if cls.__mro__[1:] != (object,):
+            raise CooperativeError, "Subclasses are not cooperative."
+        cls._cooperative_classes_set = set()
+
     if defines_method(cls, '__init__'):
-        wrapped_constructor = constructor(cls)(cls.__dict__['__init__'])
-        wrapped_constructor.__objclass__ = cls
-        cls.__init__ = wrapped_constructor
+        init = cls.__dict__['__init__']
+        if isinstance(init, InitDecorator):
+            wrapped_init = init(cls)
+        else:
+            wrapped_init = decorate_init(cls)(init)
+        wrapped_init.__objclass__ = cls
+        cls.__init__ = wrapped_init
     return cls
 
 
