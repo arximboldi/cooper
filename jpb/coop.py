@@ -3,7 +3,7 @@
 #  File:       collab.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 15:49:30 2012
-#  Time-stamp: <2012-01-24 12:27:51 jbo>
+#  Time-stamp: <2012-01-24 19:45:48 jbo>
 #
 
 #
@@ -33,18 +33,15 @@ Cooperative methods helper library.
 import inspect
 from functools import wraps
 
-class CooperativeError(Exception): pass
-class InitError(CooperativeError):  pass
+class CooperativeError(TypeError): pass
 
-
-def check_is_init(method):
-    if method.__name__ != '__init__':
-        raise InitError
-
+def check_no_params(method):
+    if any(inspect.getargspec(method)):
+        raise CooperativeError, "Del has parameters."
 
 def check_all_params_are_keyword(method):
     """
-    Raises InitError if method any parameter that is not a
+    Raises CooperativeError if method any parameter that is not a
     named keyword parameter
     """
 
@@ -52,102 +49,230 @@ def check_all_params_are_keyword(method):
 
     # Always have self, thus the -1
     if len(args or []) - 1 != len(defaults or []):
-        raise InitError, "Init has positional parameters " + \
+        raise CooperativeError, "Init has positional parameters " + \
               str(args[1:])
     if varargs:
-        raise InitError, "Init has variadic positional parameters"
+        raise CooperativeError, "Init has variadic positional parameters"
     if keywords:
-        raise InitError, "Init has variadic keyword parameters"
+        raise CooperativeError, "Init has variadic keyword parameters"
 
+def has_keywords(method):
+    return bool(inspect.getargspec(method)[3])
 
-def extract_keywords(method, keys):
+def make_keyword_extractor(method):
     """
     Removes all keyword parameters required by 'method' from
     dictionary 'keys' and returns them in a separate dictionary.
     """
 
     args, _1, _2, defs = inspect.getargspec(method)
-    defs = defs or []
-    new = {}
-    for a, d in zip(args[-len(defs):], defs):
-        if a in keys:
-            new[a] = keys[a]
-            del keys[a]
-    return new
+    defs     = defs or []
+    key_args = zip(args[-len(defs):], defs)
+    def extractor(keys):
+        new = {}
+        for a, d in key_args:
+            if a in keys:
+                new[a] = keys[a]
+                del keys[a]
+        return new
+    return extractor
 
+def decorate_cooperating(cls, method,
+                         fixed_keywords = {},
+                         post_cooperate = False):
 
-def decorate_init(cls, fixed_keywords={}):
-    def decorator(method):
-        check_is_init(method)
+    method_name = method.__name__
+
+    if method_name == '__init__':
         check_all_params_are_keyword(method)
-        @wraps(method)
-        def wrapper(self, **orig):
-            ours = extract_keywords(method, orig)
-            orig.update(fixed_keywords)
-            super(cls, self).__init__(**orig)
-            method(self, **ours)
-        return wrapper
-    return decorator
+    if method_name == '__del__':
+        check_no_params(method)
+
+    extractor = make_keyword_extractor(method)
+
+    if post_cooperate:
+        if has_keywords(method) or fixed_keywords:
+            def wrapper(self, *a, **orig):
+                ours = extractor(orig)
+                orig.update(fixed_keywords)
+                method(self, *a, **ours)
+                return getattr(super(cls, self), method_name)(*a, **orig)
+        else:
+            def wrapper(self, *a, **orig):
+                method(self, *a)
+                return getattr(super(cls, self), method_name)(*a, **orig)
+
+    else:
+        if has_keywords(method) or fixed_keywords:
+            def wrapper(self, *a, **orig):
+                ours = extractor(orig)
+                orig.update(fixed_keywords)
+                getattr(super(cls, self), method_name)(*a, **orig)
+                return method(self, *a, **ours)
+        else:
+            def wrapper(self, *a, **orig):
+                getattr(super(cls, self), method_name)(*a, **orig)
+                return method(self, *a)
+
+    wrapper = wraps(method)(wrapper)
+    wrapper.__objclass__ = cls
+    wrapper.im_func = cls
+    return wrapper
 
 
-class InitDecorator(object):
+class CoopDecorator(object):
     """
-    An init decorator will take a init function in its constructor and
+    A coop decorator will take a init function in its constructor and
     should return the decorated version when called with the class as
     a parameter.
     """
-    def __call__(self, cls):
-        pass
-
-
-class manual_init(InitDecorator):
     def __init__(self, function=None, *a, **k):
-        super(manual_init, self).__init__(*a, **k)
-        self.wrapped_init = function
+        super(CoopDecorator, self).__init__(*a, **k)
+        self.wrapped_function = function
+
     def __call__(self, cls):
-        return self.wrapped_init
+        return decorate_cooperating(cls, self.wrapped_function)
 
 
-def super_params(**keywords):
-    class FixedInit(InitDecorator):
-        def __init__(self, function=None, *a, **k):
-            super(FixedInit, self).__init__(*a, **k)
-            self.wrapped_init = function
+class manual_cooperate(CoopDecorator):
+    def __call__(self, cls):
+        return self.wrapped_function
+
+
+def cooperate_with_params(**keywords):
+    class FixedParams(CoopDecorator):
         def __call__(self, cls):
-            decorator = decorate_init(cls, fixed_keywords=keywords)
-            return decorator(self.wrapped_init)
-    return FixedInit
+            return decorate_cooperating(cls, self.wrapped_function,
+                                        fixed_keywords = keywords)
+    return FixedParams
+
+
+def post_cooperate_with_params(**keywords):
+    class FixedParams(CoopDecorator):
+        def __call__(self, cls):
+            return decorate_cooperating(cls, self.wrapped_function,
+                                        fixed_keywords = keywords,
+                                        post_cooperate = True)
+    return FixedParams
+
+class cooperate(CoopDecorator):
+    pass
+
+class cooperative(CoopDecorator):
+    def __call__(self, cls):
+        raise CooperativeError, "Cooperative method should not override"
+
+class abstract(cooperative):
+    """ Compatible with abc.abstractmethod and related classes """
+    def __init__(self, function=None, *a, **k):
+        super(CoopDecorator, self).__init__(*a, **k)
+        self.wrapped_function = function
+        function.__isabstractmethod__ = True
+    __isabstractmethod__ = True
+
+
+class post_cooperate(CoopDecorator):
+    def __call__(self, cls):
+        return decorate_cooperating(cls, self.wrapped_function,
+                                    post_cooperate = True)
 
 
 def defines_method(cls, method_name):
-    deriv_method = getattr(getattr(cls, method_name, None), 'im_func', None)
-    super_method = getattr(getattr(super(cls, cls), method_name, None), 'im_func', None)
-    return id(super_method) != id(deriv_method)
+    return method_name in cls.__dict__
+
+def overrides_method(cls, method_name):
+    return method_name in cls.__dict__ and \
+           hasattr(super(cls, cls), method_name)
+
+def overrides_cooperative(cls, method_name):
+    super_coop = getattr(getattr(super(cls, cls), method_name, None),
+                         '_cooperative_is_coop', False)
+    return super_coop
+
+def is_cooperative(cls):
+    return getattr(cls, '_cooperative_is_coop', False)
+
+def is_cooperative_root(cls):
+    return getattr(cls, '_cooperative_is_root', False)
+
+def check_cooperative_bases(cls):
+    bases = cls.__bases__
+    good  = len(bases) == 1 or all(map(is_cooperative, bases))
+    if not good:
+        raise CooperativeError, "Can not multiple-inherit non cooperative."
 
 
-def cooperative(cls):
-    if hasattr(cls, '_cooperative_classes_set'):
-        coops = cls._cooperative_classes_set
-        if cls in coops:
-            # Already decorated, maybe mixing Meta and decorator
-            return cls
-    else:
-        if cls.__mro__[1:] != (object,):
-            raise CooperativeError, "Subclasses are not cooperative."
-        cls._cooperative_classes_set = set()
+def get_abstract_methods(cls):
+    return filter(lambda x: getattr(x, '__isabstractmethod__', False),
+                  cls.__dict__.itervalues())
 
+
+def check_single_root(cls, name):
+    # TODO: Do full method override checking at least in debug mode.
+    basic = filter(lambda c: getattr(getattr(c, name, None),
+                                     '_cooperative_is_root', False),
+                   cls.__mro__)
+    if len(basic) > 1:
+        raise CooperativeError, \
+              "Cooperative method (" + name + ") has conflicting declarations."
+
+
+def decorate_cooperative_methods(cls):
+    for name, value in cls.__dict__.iteritems():
+        if name != '__init__':
+            check_single_root(cls, name)
+            if isinstance(value, CoopDecorator):
+                if overrides_method(cls, name):
+                    wrapped = value(cls)
+                else:
+                    wrapped = value.wrapped_function
+                    wrapped._cooperative_is_root = True
+                wrapped._cooperative_is_coop = True
+                setattr(cls, name, wrapped)
+            elif overrides_cooperative(cls, name):
+                # TODO: This enforces explicit cooperation. This
+                # contradicts behaviour for __init__. Should we make
+                # this consistent either by making it optionally
+                # implicit or enforcing it explicity for __init__
+                raise CooperativeError, \
+                      "Overriding cooperative method without cooperation"
+
+
+def decorate_init(cls):
     if defines_method(cls, '__init__'):
         init = cls.__dict__['__init__']
-        if isinstance(init, InitDecorator):
+        if isinstance(init, CoopDecorator):
             wrapped_init = init(cls)
         else:
-            wrapped_init = decorate_init(cls)(init)
-        wrapped_init.__objclass__ = cls
+            raise CooperativeError, \
+                  "Constructor should cooperate in cooperative class"
         cls.__init__ = wrapped_init
-    return cls
 
+def decorate_del(cls):
+    if defines_method(cls, '__del__'):
+        fin = cls.__dict__['__del__']
+        if isinstance(fin, CoopDecorator):
+            wrapped_fin = fin(cls)
+        else:
+            raise CooperativeError, \
+                  "Finalizer should cooperate in cooperative class"
+        cls.__del__ = wrapped_fin
+
+
+def cooperative_class(cls):
+    check_cooperative_bases(cls)
+    cls.__abstractmethods__ = frozenset(get_abstract_methods(cls))
+    decorate_init(cls)
+    decorate_del(cls)
+    decorate_cooperative_methods(cls)
+    cls._cooperative_is_coop = True
+    return cls
 
 class CooperativeMeta(type):
     def __init__(cls, name, bases, dct):
         super(CooperativeMeta, cls).__init__(name, bases, dct)
-        cooperative(cls)
+        cooperative_class(cls)
+
+class Cooperative(object):
+    __metaclass__ = CooperativeMeta
+
