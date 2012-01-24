@@ -3,7 +3,7 @@
 #  File:       jpb_coop.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 16:12:23 2012
-#  Time-stamp: <2012-01-24 19:47:35 jbo>
+#  Time-stamp: <2012-01-24 19:50:54 jbo>
 #
 
 #
@@ -396,19 +396,28 @@ class TestCoopPerformance(unittest.TestCase):
         t1 = min(timeit.repeat(_SimpleTestDeriv, number=1<<16))
         t2 = min(timeit.repeat(_CoopSimpleTestDeriv, number=1<<16))
         print
-        print "Simple override -- Manual: ", t1, "  Coop: ", t2, "  Ratio: ", t2/t1
+        print "Simple override -- "
+        print "   Manual: ", t1
+        print "   Coop:   ", t2
+        print "   Ratio:  ", t2/t1
 
     def test_performance_overhead_no_override(self):
         import timeit
         t1 = min(timeit.repeat(_SuperSimpleTestDeriv, number=1<<16))
         t2 = min(timeit.repeat(_SuperCoopSimpleTestDeriv, number=1<<16))
         print
-        print "No override -- Manual: ", t1, "  Coop: ", t2, "  Ratio: ", t2/t1
+        print "No override -- "
+        print "   Manual: ", t1
+        print "   Coop:   ", t2
+        print "   Ratio:  ", t2/t1
 
     def test_performance_overhead_with_params(self):
         import timeit
         t1 = min(timeit.repeat(_TestDeriv, number=1<<16))
         t2 = min(timeit.repeat(_CoopTestDeriv, number=1<<16))
         print
-        print "Params -- Manual: ", t1, "  Coop: ", t2, "  Ratio: ", t2/t1
+        print "Params -- "
+        print "   Manual: ", t1
+        print "   Coop:   ", t2
+        print "   Ratio:  ", t2/t1
 
