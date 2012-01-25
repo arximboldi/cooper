@@ -3,7 +3,7 @@
 #  File:       collab.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 15:49:30 2012
-#  Time-stamp: <2012-01-24 19:45:48 jbo>
+#  Time-stamp: <2012-01-25 20:21:59 jbo>
 #
 
 #
@@ -66,11 +66,10 @@ def make_keyword_extractor(method):
     """
 
     args, _1, _2, defs = inspect.getargspec(method)
-    defs     = defs or []
-    key_args = zip(args[-len(defs):], defs)
+    key_args = args[-len(defs or []):]
     def extractor(keys):
         new = {}
-        for a, d in key_args:
+        for a in key_args:
             if a in keys:
                 new[a] = keys[a]
                 del keys[a]
@@ -78,8 +77,13 @@ def make_keyword_extractor(method):
     return extractor
 
 def decorate_cooperating(cls, method,
-                         fixed_keywords = {},
-                         post_cooperate = False):
+                         fixed_keywords  = {},
+                         post_cooperate  = False,
+                         inner_cooperate = False):
+    # TODO: Cleanup this function is too big!
+
+    assert not post_cooperate or \
+           not inner_cooperate
 
     method_name = method.__name__
 
@@ -102,6 +106,25 @@ def decorate_cooperating(cls, method,
                 method(self, *a)
                 return getattr(super(cls, self), method_name)(*a, **orig)
 
+    elif inner_cooperate:
+        assert not fixed_keywords
+        # TODO: Maybe disregard this check for the sake of
+        # performance or some other patterns.
+        inner_call_count = [0]
+        def wrapper(self, *a, **orig):
+            ours = extractor(orig)
+            orig.update(fixed_keywords)
+            next_fn = getattr(super(cls, self), method_name)
+            def next_method(**kws):
+                inner_call_count[0] += 1
+                orig.update(kws)
+                next_fn(*a, **orig)
+            result = method(self, next_method, *a, **ours)
+            if inner_call_count[0] != 1:
+                raise CooperativeError, "Next method must be called exactly once."
+            inner_call_count[0] = 0
+            return result
+
     else:
         if has_keywords(method) or fixed_keywords:
             def wrapper(self, *a, **orig):
@@ -116,7 +139,6 @@ def decorate_cooperating(cls, method,
 
     wrapper = wraps(method)(wrapper)
     wrapper.__objclass__ = cls
-    wrapper.im_func = cls
     return wrapper
 
 
@@ -134,30 +156,6 @@ class CoopDecorator(object):
         return decorate_cooperating(cls, self.wrapped_function)
 
 
-class manual_cooperate(CoopDecorator):
-    def __call__(self, cls):
-        return self.wrapped_function
-
-
-def cooperate_with_params(**keywords):
-    class FixedParams(CoopDecorator):
-        def __call__(self, cls):
-            return decorate_cooperating(cls, self.wrapped_function,
-                                        fixed_keywords = keywords)
-    return FixedParams
-
-
-def post_cooperate_with_params(**keywords):
-    class FixedParams(CoopDecorator):
-        def __call__(self, cls):
-            return decorate_cooperating(cls, self.wrapped_function,
-                                        fixed_keywords = keywords,
-                                        post_cooperate = True)
-    return FixedParams
-
-class cooperate(CoopDecorator):
-    pass
-
 class cooperative(CoopDecorator):
     def __call__(self, cls):
         raise CooperativeError, "Cooperative method should not override"
@@ -170,11 +168,37 @@ class abstract(cooperative):
         function.__isabstractmethod__ = True
     __isabstractmethod__ = True
 
+class cooperate(CoopDecorator):
+    pass
 
 class post_cooperate(CoopDecorator):
     def __call__(self, cls):
         return decorate_cooperating(cls, self.wrapped_function,
                                     post_cooperate = True)
+
+class inner_cooperate(CoopDecorator):
+    def __call__(self, cls):
+        return decorate_cooperating(cls, self.wrapped_function,
+                                    inner_cooperate = True)
+
+class manual_cooperate(CoopDecorator):
+    def __call__(self, cls):
+        return self.wrapped_function
+
+def cooperate_with_params(**keywords):
+    class FixedParams(CoopDecorator):
+        def __call__(self, cls):
+            return decorate_cooperating(cls, self.wrapped_function,
+                                        fixed_keywords = keywords)
+    return FixedParams
+
+def post_cooperate_with_params(**keywords):
+    class FixedParams(CoopDecorator):
+        def __call__(self, cls):
+            return decorate_cooperating(cls, self.wrapped_function,
+                                        fixed_keywords = keywords,
+                                        post_cooperate = True)
+    return FixedParams
 
 
 def defines_method(cls, method_name):
@@ -185,15 +209,11 @@ def overrides_method(cls, method_name):
            hasattr(super(cls, cls), method_name)
 
 def overrides_cooperative(cls, method_name):
-    super_coop = getattr(getattr(super(cls, cls), method_name, None),
-                         '_cooperative_is_coop', False)
-    return super_coop
+    return is_cooperative(getattr(super(cls, cls), method_name, None))
 
-def is_cooperative(cls):
-    return getattr(cls, '_cooperative_is_coop', False)
+def is_cooperative(cls_or_fn):
+    return getattr(cls_or_fn, '_cooperative_is_coop', False)
 
-def is_cooperative_root(cls):
-    return getattr(cls, '_cooperative_is_root', False)
 
 def check_cooperative_bases(cls):
     bases = cls.__bases__

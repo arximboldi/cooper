@@ -3,7 +3,7 @@
 #  File:       jpb_coop.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 16:12:23 2012
-#  Time-stamp: <2012-01-24 19:50:54 jbo>
+#  Time-stamp: <2012-01-25 20:21:45 jbo>
 #
 
 #
@@ -327,6 +327,42 @@ class TestCoop(unittest.TestCase):
         self._F()
         self._check_trace_calls_with_mro(self._D.__init__)
 
+    def test_inner_cooperate(self):
+        outer_self = self
+        @self.cls_decorator.im_func
+        class _Cls(self._D):
+            __metaclass__ = self.cls_meta
+            @coop.inner_cooperate
+            def method(self, next_method, param):
+                next_method(b_mparam='new_b_mparam')
+                outer_self._trace.append(_Cls.method)
+        obj = _Cls()
+        self._clear_trace()
+        obj.method(1)
+        self._check_trace_calls_with_mro(_Cls.method)
+        self.assertEqual(obj._b_mparam, 'new_b_mparam')
+
+    def test_inner_error_call_too_much(self):
+        @self.cls_decorator.im_func
+        class _Cls(self._D):
+            __metaclass__ = self.cls_meta
+            @coop.inner_cooperate
+            def method(self, next_method, param):
+                next_method()
+                next_method()
+        obj = _Cls()
+        self.assertRaises(coop.CooperativeError, obj.method, 1)
+
+    def test_inner_error_not_call(self):
+        @self.cls_decorator.im_func
+        class _Cls(self._D):
+            __metaclass__ = self.cls_meta
+            @coop.inner_cooperate
+            def method(self, next_method, param):
+                pass
+        obj = _Cls()
+        self.assertRaises(coop.CooperativeError, obj.method, 1)
+
     def _clear_trace(self):
         self._trace[:] = []
 
@@ -391,10 +427,12 @@ class _SuperCoopSimpleTestDeriv(_SuperCoopSimpleTestBase):  pass
 
 class TestCoopPerformance(unittest.TestCase):
 
+    test_number = 1<<8
+
     def test_performance_overhead_override(self):
         import timeit
-        t1 = min(timeit.repeat(_SimpleTestDeriv, number=1<<16))
-        t2 = min(timeit.repeat(_CoopSimpleTestDeriv, number=1<<16))
+        t1 = min(timeit.repeat(_SimpleTestDeriv, number=self.test_number))
+        t2 = min(timeit.repeat(_CoopSimpleTestDeriv, number=self.test_number))
         print
         print "Simple override -- "
         print "   Manual: ", t1
@@ -403,8 +441,8 @@ class TestCoopPerformance(unittest.TestCase):
 
     def test_performance_overhead_no_override(self):
         import timeit
-        t1 = min(timeit.repeat(_SuperSimpleTestDeriv, number=1<<16))
-        t2 = min(timeit.repeat(_SuperCoopSimpleTestDeriv, number=1<<16))
+        t1 = min(timeit.repeat(_SuperSimpleTestDeriv, number=self.test_number))
+        t2 = min(timeit.repeat(_SuperCoopSimpleTestDeriv, number=self.test_number))
         print
         print "No override -- "
         print "   Manual: ", t1
@@ -413,8 +451,8 @@ class TestCoopPerformance(unittest.TestCase):
 
     def test_performance_overhead_with_params(self):
         import timeit
-        t1 = min(timeit.repeat(_TestDeriv, number=1<<16))
-        t2 = min(timeit.repeat(_CoopTestDeriv, number=1<<16))
+        t1 = min(timeit.repeat(_TestDeriv, number=self.test_number))
+        t2 = min(timeit.repeat(_CoopTestDeriv, number=self.test_number))
         print
         print "Params -- "
         print "   Manual: ", t1
