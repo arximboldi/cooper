@@ -3,11 +3,10 @@
 #  File:       collab.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 15:49:30 2012
-#  Time-stamp: <2012-01-25 20:21:59 jbo>
 #
 
 #
-#  Copyright (C) 2012 Juan Pedro Bolívar Puente
+#  Copyright (C) 2012, 2015 Juan Pedro Bolívar Puente
 #
 #  This file is part of jpblib.
 #
@@ -295,4 +294,3 @@ class CooperativeMeta(type):
 
 class Cooperative(object):
     __metaclass__ = CooperativeMeta
-

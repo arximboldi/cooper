@@ -3,7 +3,6 @@
 #  File:       jpb_coop.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 16:12:23 2012
-#  Time-stamp: <2012-01-25 20:21:45 jbo>
 #
 
 #
@@ -458,4 +457,3 @@ class TestCoopPerformance(unittest.TestCase):
         print "   Manual: ", t1
         print "   Coop:   ", t2
         print "   Ratio:  ", t2/t1
-
