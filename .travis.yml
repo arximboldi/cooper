@@ -3,8 +3,7 @@ python:
   - "2.7"
 install:
   - pip install coveralls
-  - pip install .
 script:
-  - coverage run --source=cooper runtests.py
+  - coverage2 run --source=cooper --branch runtests.py
 after_success:
-  coveralls
+  - coveralls --verbose
