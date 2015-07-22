@@ -1,5 +1,6 @@
 *.pyc
 *_flymake.py
-dist/
-build/
+.coverage
 MANIFEST
+build/
+dist/
