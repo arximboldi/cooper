@@ -1,2 +1,5 @@
 *.pyc
 *_flymake.py
+dist/
+build/
+MANIFEST
