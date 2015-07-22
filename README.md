@@ -3,6 +3,8 @@ cooper
 
 > Making super safe, a cooperative methods library
 
+[![PyPI version](https://badge.fury.io/py/cooper.svg)](http://badge.fury.io/py/cooper)
+
 Python's `super` is a very useful tool to write cooperative methods.
 A *cooperative method* is one such that cooperates with the other
 overrides in the same hierarchy.  A good example is `__init__`, as all
