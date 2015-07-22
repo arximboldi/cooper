@@ -9,7 +9,7 @@ overrides in the same hierarchy.  A good example is `__init__`, as all
 the overrides must be called in class-hierarchy ascending order to
 properly build an object.
 
-![Gary Cooper](https://upload.wikimedia.org/wikipedia/commons/7/7d/Gary_Cooper_1936.jpg)
+![Gary Cooper](doc/gary-cooper.jpg)
 
 Installation
 ------------
