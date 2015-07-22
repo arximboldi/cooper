@@ -5,5 +5,6 @@
 .coveralls.yml
 MANIFEST
 build/
+coverage.xml
 dist/
 htmlcov
