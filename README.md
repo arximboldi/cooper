@@ -3,8 +3,9 @@ cooper
 
 > Making super safe, a cooperative methods library
 
-[![Build Status](https://travis-ci.org/arximboldi/cooper.svg)](https://travis-ci.org/arximboldi/cooper)
 [![PyPI version](https://badge.fury.io/py/cooper.svg)](http://badge.fury.io/py/cooper)
+[![Build Status](https://travis-ci.org/arximboldi/cooper.svg)](https://travis-ci.org/arximboldi/cooper)
+[![Coverage Status](https://coveralls.io/repos/arximboldi/cooper/badge.svg?branch=master&service=github)](https://coveralls.io/github/arximboldi/cooper?branch=master)
 
 Python's `super` is a very useful tool to write cooperative methods.
 A *cooperative method* is one such that cooperates with the other
