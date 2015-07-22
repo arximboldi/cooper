@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#  File:       collab.py
+#  File:       __init__.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 15:49:30 2012
 #

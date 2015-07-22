@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #
-#  File:       jpb_coop.py
+#  File:       cooper.py
 #  Author:     Juan Pedro Bolívar Puente <raskolnikov@es.gnu.org>
 #  Date:       Fri Jan 20 16:12:23 2012
 #
 
 #
-#  Copyright (C) 2012 Juan Pedro Bolívar Puente
+#  Copyright (C) 2012, 2015 Juan Pedro Bolívar Puente
 #
 #  This file is part of jpblib.
 #
@@ -25,10 +25,10 @@
 #
 
 """
-Tests for jpb.coop
+Tests for cooper.
 """
 
-from jpb import coop
+import cooper
 from itertools import repeat
 
 import unittest
@@ -39,14 +39,14 @@ def make_test_hierarchy(trace, decorator=lambda x:x, metacls=type):
     @decorator
     class _A(object):
         __metaclass__ = metacls
-        @coop.cooperate
+        @cooper.cooperate
         def __init__(self):
             trace.append(_A.__init__)
-        @coop.cooperative
+        @cooper.cooperative
         def method(self, mparam):
             self._a_mparam = mparam
             trace.append(_A.method)
-        @coop.cooperative
+        @cooper.cooperative
         def post_method(self, pmparam):
             self._a_pmparam = pmparam
             trace.append(_A.post_method)
@@ -54,15 +54,15 @@ def make_test_hierarchy(trace, decorator=lambda x:x, metacls=type):
     @decorator
     class _B(_A):
         __metaclass__ = metacls
-        @coop.cooperate
+        @cooper.cooperate
         def __init__(self, b_param = 'b_param'):
             self._b_param = b_param
             trace.append(_B.__init__)
-        @coop.cooperate
+        @cooper.cooperate
         def method(self, mparam, b_mparam='b_mparam'):
             self._b_mparam = b_mparam
             trace.append(_B.method)
-        @coop.post_cooperate
+        @cooper.post_cooperate
         def post_method(self, pmparam, b_pmparam='b_mparam'):
             self._b_pmparam = b_pmparam
             trace.append(_B.post_method)
@@ -71,14 +71,14 @@ def make_test_hierarchy(trace, decorator=lambda x:x, metacls=type):
     @decorator
     class _C(_A):
         __metaclass__ = metacls
-        @coop.cooperate
+        @cooper.cooperate
         def __init__(self):
             trace.append(_C.__init__)
-        @coop.cooperate
+        @cooper.cooperate
         def method(self, mparam):
             self._c_mparam = mparam
             trace.append(_C.method)
-        @coop.post_cooperate
+        @cooper.post_cooperate
         def post_method(self, pmparam):
             self._c_pmparam = pmparam
             trace.append(_C.post_method)
@@ -86,15 +86,15 @@ def make_test_hierarchy(trace, decorator=lambda x:x, metacls=type):
     @decorator
     class _D(_B, _C):
         __metaclass__ = metacls
-        @coop.cooperate
+        @cooper.cooperate
         def __init__(self, d_param = 'd_param'):
             self._d_param = d_param
             trace.append(_D.__init__)
-        @coop.cooperate
+        @cooper.cooperate
         def method(self, mparam, d_mparam='d_mparam'):
             self._d_mparam = d_mparam
             trace.append(_D.method)
-        @coop.post_cooperate
+        @cooper.post_cooperate
         def post_method(self, pmparam, d_pmparam='d_mparam'):
             self._d_pmparam = d_pmparam
             trace.append(_D.post_method)
@@ -108,7 +108,7 @@ def make_test_hierarchy(trace, decorator=lambda x:x, metacls=type):
 
 class TestCoop(unittest.TestCase):
 
-    cls_decorator = coop.cooperative_class
+    cls_decorator = cooper.cooperative_class
     cls_meta      = type
 
     def setUp(self):
@@ -138,30 +138,30 @@ class TestCoop(unittest.TestCase):
             @self.cls_decorator.im_func
             class _Bad(object):
                 __metaclass__ = self.cls_meta
-                @coop.cooperate
+                @cooper.cooperate
                 def __init__(self, positional):
                     pass
-        self.assertRaises (coop.CooperativeError, make_cls)
+        self.assertRaises (cooper.CooperativeError, make_cls)
 
     def test_init_check_no_variadic(self):
         def make_cls():
             @self.cls_decorator.im_func
             class _Bad(object):
                 __metaclass__ = self.cls_meta
-                @coop.cooperate
+                @cooper.cooperate
                 def __init__(self, *a):
                     pass
-        self.assertRaises (coop.CooperativeError, make_cls)
+        self.assertRaises (cooper.CooperativeError, make_cls)
 
     def test_init_check_no_variadic_keywords(self):
         def make_cls():
             @self.cls_decorator.im_func
             class _Bad(object):
                 __metaclass__ = self.cls_meta
-                @coop.cooperate
+                @cooper.cooperate
                 def __init__(self, **k):
                     pass
-        self.assertRaises (coop.CooperativeError, make_cls)
+        self.assertRaises (cooper.CooperativeError, make_cls)
 
     def test_init_must_cooperate(self):
         def make_cls():
@@ -170,23 +170,23 @@ class TestCoop(unittest.TestCase):
                 __metaclass__ = self.cls_meta
                 def __init__(self):
                     pass
-        self.assertRaises (coop.CooperativeError, make_cls)
+        self.assertRaises (cooper.CooperativeError, make_cls)
 
     def test_init_must_override(self):
         def make_cls():
             @self.cls_decorator.im_func
             class _Bad(object):
                 __metaclass__ = self.cls_meta
-                @coop.cooperative
+                @cooper.cooperative
                 def __init__(self):
                     pass
-        self.assertRaises (coop.CooperativeError, make_cls)
+        self.assertRaises (cooper.CooperativeError, make_cls)
 
     def test_super_params_sends_params(self):
         @self.cls_decorator.im_func
         class _Fixed(self._F):
             __metaclass__ = self.cls_meta
-            @coop.cooperate_with_params(b_param='fixed_b_param')
+            @cooper.cooperate_with_params(b_param='fixed_b_param')
             def __init__(self):
                 pass
         obj = _Fixed()
@@ -197,7 +197,7 @@ class TestCoop(unittest.TestCase):
         @self.cls_decorator.im_func
         class _Manual(self._D):
             __metaclass__ = self.cls_meta
-            @coop.manual_cooperate
+            @cooper.manual_cooperate
             def __init__(self, *a, **k):
                 super(_Manual, self).__init__(*a, **k)
                 outer_self._trace.append(_Manual.__init__)
@@ -223,7 +223,7 @@ class TestCoop(unittest.TestCase):
             class _Bad(NonCooperativeSuperClass1,
                        NonCooperativeSuperClass2):
                 __metaclass__ = self.cls_meta
-        self.assertRaises(coop.CooperativeError, make_class)
+        self.assertRaises(cooper.CooperativeError, make_class)
 
     def test_can_mix_non_cooperative_subclass(self):
         class _Good(self._D):
@@ -236,7 +236,7 @@ class TestCoop(unittest.TestCase):
         @self.cls_decorator.im_func
         class _ABC(self._D):
             __metaclass__ = self.cls_meta
-            @coop.abstract
+            @cooper.abstract
             def abstract_method(self):
                 return 0
         self.assertRaises(TypeError, _ABC)
@@ -245,13 +245,13 @@ class TestCoop(unittest.TestCase):
         @self.cls_decorator.im_func
         class _ABC(self._D):
             __metaclass__ = self.cls_meta
-            @coop.abstract
+            @cooper.abstract
             def abstract_method(self):
                 self._result = 1
         @self.cls_decorator.im_func
         class _Concrete(_ABC):
             __metaclass__ = self.cls_meta
-            @coop.cooperate
+            @cooper.cooperate
             def abstract_method(self):
                 return self._result
         self.assertEqual(_Concrete().abstract_method(), 1)
@@ -283,23 +283,23 @@ class TestCoop(unittest.TestCase):
         @self.cls_decorator.im_func
         class _A1(object):
             __metaclass__ = self.cls_meta
-            @coop.cooperative
+            @cooper.cooperative
             def method(self):
                 pass
         @self.cls_decorator.im_func
         class _A2(object):
             __metaclass__ = self.cls_meta
-            @coop.cooperative
+            @cooper.cooperative
             def method(self):
                 pass
         def make_class():
             @self.cls_decorator.im_func
             class _A12(_A1, _A2):
                 __metaclass__ = self.cls_meta
-                @coop.cooperate
+                @cooper.cooperate
                 def method(self):
                     pass
-        self.assertRaises(coop.CooperativeError, make_class)
+        self.assertRaises(cooper.CooperativeError, make_class)
 
     def test_mro_call_order(self):
         for cls in (self._D, self._C, self._B, self._A):
@@ -331,7 +331,7 @@ class TestCoop(unittest.TestCase):
         @self.cls_decorator.im_func
         class _Cls(self._D):
             __metaclass__ = self.cls_meta
-            @coop.inner_cooperate
+            @cooper.inner_cooperate
             def method(self, next_method, param):
                 next_method(b_mparam='new_b_mparam')
                 outer_self._trace.append(_Cls.method)
@@ -345,22 +345,22 @@ class TestCoop(unittest.TestCase):
         @self.cls_decorator.im_func
         class _Cls(self._D):
             __metaclass__ = self.cls_meta
-            @coop.inner_cooperate
+            @cooper.inner_cooperate
             def method(self, next_method, param):
                 next_method()
                 next_method()
         obj = _Cls()
-        self.assertRaises(coop.CooperativeError, obj.method, 1)
+        self.assertRaises(cooper.CooperativeError, obj.method, 1)
 
     def test_inner_error_not_call(self):
         @self.cls_decorator.im_func
         class _Cls(self._D):
             __metaclass__ = self.cls_meta
-            @coop.inner_cooperate
+            @cooper.inner_cooperate
             def method(self, next_method, param):
                 pass
         obj = _Cls()
-        self.assertRaises(coop.CooperativeError, obj.method, 1)
+        self.assertRaises(cooper.CooperativeError, obj.method, 1)
 
     def _clear_trace(self):
         self._trace[:] = []
@@ -376,12 +376,12 @@ class TestCoop(unittest.TestCase):
 class TestCoopMeta(TestCoop):
 
     cls_decorator = lambda x:x
-    cls_meta      = coop.CooperativeMeta
+    cls_meta      = cooper.CooperativeMeta
 
     def test_meta_works_on_subclasses(self):
         outer_self = self
         class _NewClass(self._D):
-            @coop.cooperate
+            @cooper.cooperate
             def __init__(self):
                 outer_self._trace.append(_NewClass.__init__)
         self._clear_trace()
@@ -395,12 +395,12 @@ class _TestBase(object):
 class _TestDeriv(_TestBase):
     def __init__(self, *a, **k):
         super(_TestDeriv, self).__init__(param='param',*a, **k)
-class _CoopTestBase(coop.Cooperative):
-    @coop.cooperate
+class _CoopTestBase(cooper.Cooperative):
+    @cooper.cooperate
     def __init__(self, param=None):
         assert param == 'param'
 class _CoopTestDeriv(_CoopTestBase):
-    @coop.cooperate_with_params(param='param')
+    @cooper.cooperate_with_params(param='param')
     def __init__(self):
         pass
 
@@ -410,18 +410,18 @@ class _SimpleTestBase(object):
 class _SimpleTestDeriv(_SimpleTestBase):
     def __init__(self, *a, **k):
         super(_SimpleTestDeriv, self).__init__(*a, **k)
-class _CoopSimpleTestBase(coop.Cooperative):
-    @coop.cooperate
+class _CoopSimpleTestBase(cooper.Cooperative):
+    @cooper.cooperate
     def __init__(self):
         pass
 class _CoopSimpleTestDeriv(_CoopSimpleTestBase):
-    @coop.cooperate
+    @cooper.cooperate
     def __init__(self):
         pass
 
 class _SuperSimpleTestBase(object): pass
 class _SuperSimpleTestDeriv(_SuperSimpleTestBase): pass
-class _SuperCoopSimpleTestBase(coop.Cooperative): pass
+class _SuperCoopSimpleTestBase(cooper.Cooperative): pass
 class _SuperCoopSimpleTestDeriv(_SuperCoopSimpleTestBase):  pass
 
 class TestCoopPerformance(unittest.TestCase):
