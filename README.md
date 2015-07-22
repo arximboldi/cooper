@@ -41,8 +41,8 @@ and usable in large projects.
 Examples
 --------
 
-```
-from cooper import *
+```python
+    from cooper import *
 ```
 
 ### Cooperative constructors
