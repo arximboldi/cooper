@@ -1,6 +1,8 @@
 *.pyc
 *_flymake.py
+.cache
 .coverage
+.coveralls.yml
 MANIFEST
 build/
 dist/
