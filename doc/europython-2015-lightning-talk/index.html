@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <title>Cooper: making super safe</title>
+
+    <meta name="description" content="Cooper is a cooperative methods library">
+    <meta name="author" content="Juan Pedro Bolivar Puente">
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="css/reveal.min.css">
+    <link rel="stylesheet" href="css/theme/beige.css" id="theme">
+
+    <script type="text/javascript" src="lib/syntaxhighlighter/scripts/shCore.js"></script>
+    <script type="text/javascript" src="lib/syntaxhighlighter/scripts/shBrushCpp.js"></script>
+
+    <!-- For syntax highlighting -->
+    <link rel="stylesheet" href="lib/css/styles/tomorrow.css">
+    <link href="lib/syntaxhighlighter/styles/shCore.css" rel="stylesheet" type="text/css" />
+    <link href="lib/syntaxhighlighter/styles/shThemeDefault.css" rel="stylesheet" type="text/css" />
+
+    <style>
+      .reveal pre code {
+        font-family: Monaco, Menlo, Consolas, monospace;
+        padding: 4%;
+        letter-spacing: 0.5px;
+        max-height: 100%;
+      }
+      .reveal pre {
+        font-size: 0.68wem;
+        margin-left: -2%;
+        width: 104%;
+      }
+      .reveal h1,
+      .reveal h2,
+      .reveal h3,
+      .reveal h4,
+      .reveal h5,
+      .reveal h6 {
+        margin: 20px 0 10px 0;
+      }
+      .reveal p {
+        font-size: 0.85em;
+        margin-bottom: 40px;
+      }
+
+      .green {
+        background: #bfb
+      }
+
+      .red {
+        background: #fbb;
+      }
+
+      .noborder {
+        vertical-align: middle !important;
+        border: 0 !important;
+        box-shadow: 0 0 0 #fff !important;
+      }
+    </style>
+
+    <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+    <script>
+      if( window.location.search.match( /print-pdf/gi ) ) {
+      var link = document.createElement( 'link' );
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = 'css/print/pdf.css';
+      document.getElementsByTagName( 'head' )[0].appendChild( link );
+      }
+    </script>
+
+    <!--[if lt IE 9]>
+	<script src="lib/js/html5shiv.js"></script>
+	<![endif]-->
+  </head>
+
+  <body>
+    <div class="reveal">
+      <div class="slides">
+        <!--
+          -- Introduction
+          -- ------------
+          -->
+
+	<section
+           data-background-color="#fff"
+           data-background-image="pic/super-safe.png">
+          <div>
+	    <h1 style="text-align:left;
+                       font-size:500%;
+                       width:50%;
+                       margin-right:50%;
+                       text-shadow: 0 0 40px #fff, 0 0 20px #fff">
+              Making<br/>super()<br/>safe
+            </h1>
+          </div>
+	</section>
+
+        <section
+           data-background-color="#fff"
+           data-background-image="pic/super-safe.png">
+          <div>
+            <h3 style="text-align:left;
+                       width:60%;
+                       margin-right:40%;
+                       text-shadow: 0 0 40px #fff, 0 0 20px #fff">
+            <small>a presention brought to you by</small><br/>
+            <strong>Juan Pedro<br/> Bolivar Puente</strong><br/>and <strong>Ableton</strong>
+          </h3>
+	</section>
+
+        <section>
+          <h1>super() is good</h1>
+	</section>
+
+        <section>
+          <ul>
+            <li>Python got multiple inheritance right</li>
+            <li>Methods that call <strong>super()</strong> are <u>cooperative</u></li>
+            <li>They make classes <u>compose</u></li>
+            <li>They enable <i>mixins</i>, <i>aspects</i>, <i>decorators (GoF)</i></li>
+          </ul>
+	</section>
+
+        <section data-background-color="#fff">
+          <img class="noborder" src="pic/a-b.png"/>
+        </section>
+        <section data-background-color="#fff">
+          <img class="noborder" src="pic/a-b-super.png"/>
+          <tt><br/>B.__mro__ == [
+          <img class="noborder" width="5%" src="pic/b.png"/>,
+          <img class="noborder" width="5%" src="pic/a.png"/>
+          ]</tt>
+          <br/><span style="color:#777; font-size:70%">__mro__ = method resolution order</span>
+        </section>
+        <section data-background-color="#fff">
+          <img class="noborder" src="pic/a-b-super.png"/>
+          <img class="noborder" src="pic/a-c-super.png"/>
+          <tt><br/>C.__mro__ == [
+          <img class="noborder" width="5%" src="pic/c.png"/>,
+          <img class="noborder" width="5%" src="pic/a.png"/>
+          ]</tt>
+          <br/><span style="color:#777; font-size:70%">__mro__ = method resolution order</span>
+        </section>
+        <section data-background-color="#fff">
+          <div class="noborder" style="float:left; text-align:right">
+            <img class="noborder" width="70%" src="pic/a-b-super.png"/><br/>
+            <img class="noborder" width="70%" src="pic/a-c-super.png"/>
+          </div>
+          <img class="noborder" src="pic/d-b-c-a.png"/>
+          <tt><br/>D.__mro__ == [
+            <img class="noborder" width="5%" src="pic/d.png"/>,
+            ...?
+          ]</tt>
+        </section>
+        <section data-background-color="#fff">
+          <div class="noborder" style="float:left; text-align:right">
+            <img class="noborder" width="70%" src="pic/a-b-super.png"/><br/>
+            <img class="noborder" width="70%" src="pic/a-c-super.png"/>
+          </div>
+          <img class="noborder" src="pic/d-b-c-a-super.png"/>
+          <tt><br/>D.__mro__ == [
+          <img class="noborder" width="5%" src="pic/d.png"/>,
+          <img class="noborder" width="5%" src="pic/b.png"/>,
+          <img class="noborder" width="5%" src="pic/c.png"/>,
+          <img class="noborder" width="5%" src="pic/a.png"/>
+          ]</tt>
+        </section>
+
+        <section>
+          <h1>super() is tricky</h1>
+	</section>
+
+        <section>
+          <pre style="font-size:110%"><code class="python" data-trim>
+class Foo(object):
+
+  def __init__(self, param):
+    self._thing = param
+          </code></pre>
+        </section>
+
+        <section>
+          <pre style="font-size:110%"><code class="python" data-trim>
+class Foo(object):
+
+  def __init__(self, param):
+    object.__init__(self)
+    self._thing = param
+          </code></pre>
+        </section>
+
+        <section>
+          <pre style="font-size:110%"><code class="python" data-trim>
+class Foo(object):
+
+  def __init__(self, param):
+    super(Foo, self).__init__()
+    self._thing = param
+          </code></pre>
+        </section>
+
+        <section>
+          <pre style="font-size:100%"><code class="python" data-trim>
+class Foo(object):
+
+  def __init__(self, param=None, *a, **k):
+    super(Foo, self).__init__(*a, **k)
+    self._thing = param
+          </code></pre>
+        </section>
+
+        <section>
+          <pre style="font-size:100%"><code class="python" data-trim>
+class Foo(object):
+
+  def __init__(self, param=None, *a, **k):
+    super(Foo, self).__init__(*a, **k)
+    self._thing = param
+          </code></pre>
+          <h3>
+            UNFRIENDLY, ACKWARD, ERROR-PRONE, HARD TO DEBUG
+          </h3>
+        </section>
+
+        <section data-background-color="#fff">
+          <img class="noborder" src="pic/cooper.gif" width="50%" style="float:left">
+          <h1 style="margin-left: 6%;
+                     float:left;
+                     text-align:left;
+                     font-size:520%">
+            MEET<br/>
+            COOPER
+          </h1>
+	</section>
+
+        <section>
+          <pre style="font-size:100%"><code class="python" data-trim>
+class Foo(Cooperative):
+
+    @cooperate
+    def __init__(self, param=None):
+        self._thing = param
+          </code></pre>
+          <ul>
+            <li>Overrides must cooperate, or error</li>
+            <li>Enforces correct signatures</li>
+            <li>Supports abstract methods</li>
+          </ul>
+        </section>
+
+        <section>
+          <pre style="font-size:80%"><code class="python" data-trim>
+class Text(Cooperative):
+    @cooperate
+    def __init__(self, text=None):
+        self._text = text
+
+class WithBorder(Cooperative):
+    @cooperate
+    def __init__(self, border=None):
+        self._border = border
+
+class TextWithBorder(Text, WithBorder): pass
+
+x = TextWithBorder(text='cool', border=10)
+assert x._text == 'cool' && x._border == 10
+          </code></pre>
+        </section>
+
+        <section>
+          <pre style="font-size:80%"><code class="python" data-trim>
+class Text(Cooperative):
+    @cooperate
+    def __init__(self, text=None):
+        self._text = text
+
+class WithBorder(Cooperative):
+    @cooperate
+    def __init__(self, border=None):
+        self._border = border
+
+x = mixin(Text, WithBorder)(text='cool', border=10)
+assert x._text == 'cool' && x._border == 10
+          </code></pre>
+        </section>
+
+        <section>
+          <pre style="font-size:100%"><code class="python" data-trim>
+class Foo(Cooperative):
+
+    @post_cooperate
+    def __del__(self):
+        flush_toilet()
+          </code></pre>
+        </section>
+
+        <section>
+          <pre style="font-size:100%"><code class="python" data-trim>
+class Foo(Cooperative):
+
+    @inner_cooperate
+    def update(self, next):
+        next(param = compute_stuff())
+          </code></pre>
+        </section>
+
+        <section data-background-image="pic/cool.gif">
+	</section>
+
+        <section data-background-color="#fff">
+          <img class="noborder" src="pic/cooper-bie.gif" width="50%" style="float:left">
+          <h3 style="margin-left: 6%;
+                     float:left;
+                     text-align:left;
+                     font-size:300%">
+            <a href="https://github.com/arximboldi/cooper">
+              github.com/<br/>arximboldi/<br/>cooper
+            </a></br>
+            <br/>Thanks!
+          </h1>
+	</section>
+      </div>
+    </div>
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.min.js"></script>
+
+    <script>
+init();
+function init() {
+    console.log("Run my init, yo!");
+    // var cblocks = document.querySelectorAll("pre code");
+    // if(cblocks.length) {
+    //     for(var i=0, len=cblocks.length; i<len; i++) {
+    //         var dom = cblocks[i];
+    //         var html = dom.innerHTML;
+    //         html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    //         dom.innerHTML = html;
+    //     }
+    // }
+
+    // Full list of configuration options available here:
+    // https://github.com/hakimel/reveal.js#configuration
+    Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+        width: 960,
+        height: 700,
+        margin: 0,
+
+        theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+        transition: Reveal.getQueryHash().transition || 'none', // default/cube/page/concave/zoom/linear/fade/none
+        transitionSpeed: 'default',
+
+        // Parallax scrolling
+        // parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+        // parallaxBackgroundSize: '2100px 900px',
+
+        // Optional libraries used to extend on reveal.js
+        dependencies: [
+            { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+            { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+            { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+            { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+            { src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+            { src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+        ]
+    });
+}
+   // SyntaxHighlighter.all()
+    </script>
+  </body>
+</html>
