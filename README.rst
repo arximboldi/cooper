@@ -22,7 +22,7 @@ overrides in the same hierarchy.  A good example is ``__init__``, as
 all the overrides must be called in class-hierarchy ascending order to
 properly build an object.
 
-.. image:: doc/gary-cooper.jpg
+.. image:: https://cdn.rawgit.com/arximboldi/cooper/master/doc/gary-cooper.jpg
    :align: center
 
 Installation
@@ -57,7 +57,7 @@ Examples
     from cooper import *
 
 Cooperative constructors
-````
+````````````````````````
 
 .. code:: python
 
@@ -80,7 +80,7 @@ Cooperative constructors
     Deriv.__init__
 
 Automatic argument forwarding
-````
+`````````````````````````````
 
 .. code:: python
 
@@ -105,7 +105,7 @@ Automatic argument forwarding
 
 
 Other methods
-````
+`````````````
 
 .. code:: python
 
@@ -128,7 +128,7 @@ Other methods
     Player.update
 
 Abstract methods
-````
+````````````````
 
 .. code:: python
 
@@ -157,9 +157,10 @@ Abstract methods
    Concrete.method
 
 Compatibility with standard abstract methods
-````
+````````````````````````````````````````````
 
 .. code:: python
+
     import abc
 
     class Abstract(Cooperative):
@@ -171,7 +172,7 @@ Compatibility with standard abstract methods
 ..
 
 Post-cooperation
-````
+````````````````
 
 .. code:: python
 
@@ -194,7 +195,7 @@ Post-cooperation
     Entity.dispose
 
 Fix arguments to superclass
-````
+```````````````````````````
 
 .. code:: python
 
@@ -218,7 +219,7 @@ Fix arguments to superclass
     background = white
 
 Inner cooperation
-````
+`````````````````
 
 .. code:: python
 
@@ -232,7 +233,7 @@ Inner cooperation
 ..
 
 Manual cooperation
-````
+``````````````````
 
 .. code:: python
 
