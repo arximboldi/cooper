@@ -22,8 +22,8 @@ overrides in the same hierarchy.  A good example is ``__init__``, as
 all the overrides must be called in class-hierarchy ascending order to
 properly build an object.
 
-.. image:: https://cdn.rawgit.com/arximboldi/cooper/master/doc/gary-cooper.jpg
-   :align: center
+.. image:: https://cdn.rawgit.com/arximboldi/cooper/master/doc/gary-cooper.png
+   :align: right
 
 Installation
 ------------
